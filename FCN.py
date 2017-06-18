@@ -25,6 +25,11 @@ IMAGE_SIZE = 224
 
 
 def vgg_net(weights, image):
+    """
+    :param weights: np matrix
+    :param image: tf place holder <- fed with np arrays
+    :return: a dict. key is the name of layer, value is the corresponding opration node in tf graph.
+    """
     layers = (
         'conv1_1', 'relu1_1', 'conv1_2', 'relu1_2', 'pool1',
 
@@ -48,14 +53,18 @@ def vgg_net(weights, image):
             kernels, bias = weights[i][0][0][0][0]
             # matconvnet: weights are [width, height, in_channels, out_channels]
             # tensorflow: weights are [height, width, in_channels, out_channels]
+            # weight tf var
             kernels = utils.get_variable(np.transpose(kernels, (1, 0, 2, 3)), name=name + "_w")
+            # bias tf var
             bias = utils.get_variable(bias.reshape(-1), name=name + "_b")
+            # the output tf layer node
             current = utils.conv2d_basic(current, kernels, bias)
         elif kind == 'relu':
             current = tf.nn.relu(current, name=name)
             if FLAGS.debug:
                 utils.add_activation_summary(current)
         elif kind == 'pool':
+            # average pooling is this correct?????
             current = utils.avg_pool_2x2(current)
         net[name] = current
 
@@ -65,7 +74,7 @@ def vgg_net(weights, image):
 def inference(image, keep_prob):
     """
     Semantic segmentation network definition
-    :param image: input image. Should have values in range 0-255
+    :param image: input image.(place holder) Should have values in range 0-255
     :param keep_prob:
     :return:
     """
@@ -80,6 +89,7 @@ def inference(image, keep_prob):
     processed_image = utils.process_image(image, mean_pixel)
 
     with tf.variable_scope("inference"):
+        # build a dict for tf graph. indexed by layer name.
         image_net = vgg_net(weights, processed_image)
         conv_final_layer = image_net["conv5_3"]
 
@@ -145,7 +155,9 @@ def main(argv=None):
     image = tf.placeholder(tf.float32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 3], name="input_image")
     annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 1], name="annotation")
 
+    # build graph here in inference
     pred_annotation, logits = inference(image, keep_probability)
+
     tf.summary.image("input_image", image, max_outputs=2)
     tf.summary.image("ground_truth", tf.cast(annotation, tf.uint8), max_outputs=2)
     tf.summary.image("pred_annotation", tf.cast(pred_annotation, tf.uint8), max_outputs=2)

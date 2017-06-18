@@ -57,13 +57,28 @@ def save_image(image, save_dir, name, mean=None):
     misc.imsave(os.path.join(save_dir, name + ".png"), image)
 
 
+
 def get_variable(weights, name):
+    """
+    initialize tf var from a initial value, and give it a name.
+    :param weights: numpy array
+    :param name: string
+    :return:
+        the var node in tf graph
+    """
     init = tf.constant_initializer(weights, dtype=tf.float32)
     var = tf.get_variable(name=name, initializer=init,  shape=weights.shape)
     return var
 
 
 def weight_variable(shape, stddev=0.02, name=None):
+    """
+    generate a weight tf var
+    :param shape: [height, width, in_channels, out_channels]
+    :param stddev:
+    :param name:
+    :return:
+    """
     # print(shape)
     initial = tf.truncated_normal(shape, stddev=stddev)
     if name is None:
@@ -73,6 +88,12 @@ def weight_variable(shape, stddev=0.02, name=None):
 
 
 def bias_variable(shape, name=None):
+    """
+    generates one dim bias
+    :param shape: a list containing one integer. e.g. [3] -> 3 dim bias
+    :param name:
+    :return:
+    """
     initial = tf.constant(0.0, shape=shape)
     if name is None:
         return tf.Variable(initial)
@@ -86,11 +107,25 @@ def get_tensor_size(tensor):
 
 
 def conv2d_basic(x, W, bias):
+    """
+    build conv layer(strides 1x1, padding SAME)
+    :param x: image placeholder
+    :param W: weight tf var
+    :param bias: bias tf var
+    :return: x (conv*) W + b
+    """
     conv = tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding="SAME")
     return tf.nn.bias_add(conv, bias)
 
 
 def conv2d_strided(x, W, b):
+    """
+    build conv layer(strides 2x2, padding SAME)
+    :param x: image placeholder
+    :param W: weight tf var
+    :param bias: bias tf var
+    :return: x (conv*) W + b
+    """
     conv = tf.nn.conv2d(x, W, strides=[1, 2, 2, 1], padding="SAME")
     return tf.nn.bias_add(conv, b)
 
@@ -113,10 +148,20 @@ def leaky_relu(x, alpha=0.0, name=""):
 
 
 def max_pool_2x2(x):
+    """
+    max pooling. window size 2x2, strides 2x2
+    :param x: tf var
+    :return:
+    """
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
 
 def avg_pool_2x2(x):
+    """
+    average pooling. window size 2x2, strides 2x2
+    :param x: tf var
+    :return:
+    """
     return tf.nn.avg_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
 
@@ -149,6 +194,12 @@ def batch_norm(x, n_out, phase_train, scope='bn', decay=0.9, eps=1e-5):
 
 
 def process_image(image, mean_pixel):
+    """
+    subtract the images by mean_pixel.
+    :param image: tf place holder
+    :param mean_pixel: np matrix
+    :return:
+    """
     return image - mean_pixel
 
 
