@@ -91,8 +91,8 @@ def create_image_lists(image_dirs):
     # construct resulting images list
     image_list = {}
     split_pos = int(len(obj_list) * 0.9)
-    image_list['training'] = obj_list[:200]
-    image_list['validation'] = obj_list[200:230]
+    image_list['training'] = obj_list[:split_pos]
+    image_list['validation'] = obj_list[split_pos:]
     no_of_images = len(obj_list)
     print('No. of all files: %d' % no_of_images)
     print('No. of training files: %d' % len(image_list['training']))
