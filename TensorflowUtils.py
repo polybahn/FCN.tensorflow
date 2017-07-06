@@ -7,6 +7,7 @@ import os, sys
 from six.moves import urllib
 import tarfile
 import zipfile
+import rarfile
 import scipy.io
 
 
@@ -20,7 +21,7 @@ def get_model_data(dir_path, model_url):
     return data
 
 
-def maybe_download_and_extract(dir_path, url_name, is_tarfile=False, is_zipfile=False):
+def maybe_download_and_extract(dir_path, url_name, is_tarfile=False, is_zipfile=False, is_rarfile=False):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
     filename = url_name.split('/')[-1]
@@ -41,6 +42,10 @@ def maybe_download_and_extract(dir_path, url_name, is_tarfile=False, is_zipfile=
             with zipfile.ZipFile(filepath) as zf:
                 zip_dir = zf.namelist()[0]
                 zf.extractall(dir_path)
+        elif is_rarfile:
+            with rarfile.RarFile(filepath) as rf:
+                rar_dir = rf.infolist()[0]
+                rf.extractall(dir_path)
 
 
 def save_image(image, save_dir, name, mean=None):

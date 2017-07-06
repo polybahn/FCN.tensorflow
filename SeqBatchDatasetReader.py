@@ -8,6 +8,7 @@ import scipy.misc as misc
 import progressbar
 import sys
 from six.moves import xrange
+import cv2
 
 class BatchDatset:
     files = []
@@ -42,12 +43,12 @@ class BatchDatset:
         self.__channels = True
         bar1 = progressbar.ProgressBar()
         print('resizing RGB images')
-        self.images = np.array([self._transform(filename['image']) for filename in bar1(self.files)])
+        self.images = np.array([self._transform(filename['image'], is_ann=False) for filename in bar1(self.files)])
         print('resizing annotations')
         self.__channels = False
         bar2 = progressbar.ProgressBar()
         self.annotations = np.array(
-            [np.expand_dims(self._transform_annotation(filename['annotation']), axis=3) for filename in bar2(self.files)])
+            [np.expand_dims(self._transform(filename['annotation'], is_ann=True), axis=3) for filename in bar2(self.files)])
         print (self.images.shape)
         print (self.annotations.shape)
 
@@ -57,15 +58,15 @@ class BatchDatset:
         #     print('\n'.join([' '.join([str(self.annotations[2][i][j][k]) for j in xrange(120)]) for i in xrange(180)]))
 
 
-    def _transform(self, filename):
-        image = misc.imread(filename)
+    def _transform(self, filename, is_ann):
+        image = cv2.imread(filename, -1)
         if self.__channels and len(image.shape) < 3:  # make sure images are of shape(h,w,3)
             image = np.array([image for i in range(3)])
 
         if self.image_options.get("resize", False) and self.image_options["resize"]:
             if self.image_options.get("by_ratio", False) and self.image_options['by_ratio']:
                 resize_ratio = float(self.image_options["resize_ratio"])
-                resize_image = misc.imresize(image, resize_ratio, interp='nearest')
+                resize_image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
             else:
                 resize_width = int(self.image_options["resize_size"])
                 # resize_height = int(self.image_options["resize_height"])
@@ -74,28 +75,15 @@ class BatchDatset:
         else:
             resize_image = image
 
+        if is_ann:
+            resize_image = resize_image[:,:,2]
+            # for i in range(resize_image.shape[0]):
+            #     for j in range(resize_image.shape[1]):
+            #         if resize_image[i][j] > 15:
+            #             print(resize_image[i][j])
+            #             print(filename)
+
         return np.array(resize_image)
-
-    def _transform_annotation(self, filename):
-        mat = np.loadtxt(filename, dtype='uint8')
-        # replace all 255 values with 0s
-        mat = self._normalize_zero(mat)
-        if self.image_options.get("resize", False) and self.image_options["resize"]:
-            resize_width = int(self.image_options["resize_size"])
-            resize_mat = misc.imresize(mat, [resize_width, resize_width], interp='nearest')
-        else:
-            resize_mat = mat
-        return np.array(resize_mat)
-
-    def _normalize_zero(self, mat):
-        dim = mat.shape
-        value = np.uint8(255)
-        assert len(dim) is 2
-        for i in xrange(dim[0]):
-            for j in xrange(dim[1]):
-                if mat[i][j] == value:
-                    mat[i][j] = 0
-        return mat
 
     def get_records(self):
         return self.images, self.annotations

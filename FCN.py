@@ -5,13 +5,13 @@ import numpy as np
 import TensorflowUtils as utils
 import read_MITSceneParsingData as scene_parsing
 import datetime
-import BatchDatsetReader as dataset
+import SeqBatchDatasetReader as dataset
 from six.moves import xrange
 
 FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_integer("batch_size", "2", "batch size for training")
+tf.flags.DEFINE_integer("batch_size", "4", "batch size for training")
 tf.flags.DEFINE_string("logs_dir", "logs/", "path to logs directory")
-tf.flags.DEFINE_string("data_dir", "Data_zoo/MIT_SceneParsing/", "path to dataset")
+tf.flags.DEFINE_string("data_dir", "Data_zoo/SYNTHIA/", "path to dataset")
 tf.flags.DEFINE_float("learning_rate", "1e-4", "Learning rate for Adam Optimizer")
 tf.flags.DEFINE_string("model_dir", "Model_zoo/", "Path to vgg model mat")
 tf.flags.DEFINE_bool('debug', "False", "Debug mode: True/ False")
@@ -19,10 +19,18 @@ tf.flags.DEFINE_string('mode', "train", "Mode train/ test/ visualize")
 
 MODEL_URL = 'http://www.vlfeat.org/matconvnet/models/beta16/imagenet-vgg-verydeep-19.mat'
 
-MAX_ITERATION = int(1e5 + 1)
-NUM_OF_CLASSESS = 151
-IMAGE_SIZE = 224
+MAX_ITERATION = int(1e2 + 1)
+NUM_OF_CLASSESS = 16
 
+RESIZE_RATIO = 0.25
+# IMAGE_SIZE = 224
+IMAGE_WIDTH = 320
+IMAGE_HEIGHT = 190
+'''
+same input size as the SYNTHIA paper
+'''
+# IMAGE_WIDTH = 180
+# IMAGE_HEIGHT = 120
 
 def vgg_net(weights, image):
     """
@@ -152,8 +160,8 @@ def train(loss_val, var_list):
 
 def main(argv=None):
     keep_probability = tf.placeholder(tf.float32, name="keep_probabilty")
-    image = tf.placeholder(tf.float32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 3], name="input_image")
-    annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_SIZE, IMAGE_SIZE, 1], name="annotation")
+    image = tf.placeholder(tf.float32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 3], name="input_image")
+    annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name="annotation")
 
     # build graph here in inference
     pred_annotation, logits = inference(image, keep_probability)
@@ -181,7 +189,7 @@ def main(argv=None):
     print(len(valid_records))
 
     print("Setting up dataset reader")
-    image_options = {'resize': True, 'resize_size': IMAGE_SIZE}
+    image_options = {'resize': True, 'resize_ratio': RESIZE_RATIO, 'by_ratio': True}
     if FLAGS.mode == 'train':
         train_dataset_reader = dataset.BatchDatset(train_records, image_options)
     validation_dataset_reader = dataset.BatchDatset(valid_records, image_options)
