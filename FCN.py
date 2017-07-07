@@ -2,11 +2,29 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 
+
 import TensorflowUtils as utils
-import read_MITSceneParsingData as scene_parsing
+
 import datetime
-import SeqBatchDatasetReader as dataset
+
 from six.moves import xrange
+
+
+# choose dataset to train
+IS_RAND = True
+if IS_RAND:
+    NUM_OF_CLASSESS = 12
+    IMAGE_WIDTH = 240
+    IMAGE_HEIGHT = 180
+    import read_SynthiaRandData as scene_parsing
+    import BatchDatsetReader as dataset
+else:
+    NUM_OF_CLASSESS = 16
+    import read_MITSceneParsingData as scene_parsing
+    import SeqBatchDatasetReader as dataset
+    IMAGE_WIDTH = 320
+    IMAGE_HEIGHT = 190
+
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_integer("batch_size", "4", "batch size for training")
@@ -19,18 +37,15 @@ tf.flags.DEFINE_string('mode', "train", "Mode train/ test/ visualize")
 
 MODEL_URL = 'http://www.vlfeat.org/matconvnet/models/beta16/imagenet-vgg-verydeep-19.mat'
 
+
 MAX_ITERATION = int(1e2 + 1)
-NUM_OF_CLASSESS = 16
+
 
 RESIZE_RATIO = 0.25
 # IMAGE_SIZE = 224
-IMAGE_WIDTH = 320
-IMAGE_HEIGHT = 190
 '''
 same input size as the SYNTHIA paper
 '''
-# IMAGE_WIDTH = 180
-# IMAGE_HEIGHT = 120
 
 def vgg_net(weights, image):
     """

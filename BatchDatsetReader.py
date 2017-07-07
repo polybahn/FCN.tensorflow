@@ -8,6 +8,8 @@ import scipy.misc as misc
 import progressbar
 import sys
 from six.moves import xrange
+import cv2
+import pandas as pd
 
 class BatchDatset:
     files = []
@@ -65,7 +67,7 @@ class BatchDatset:
         if self.image_options.get("resize", False) and self.image_options["resize"]:
             if self.image_options.get("by_ratio", False) and self.image_options['by_ratio']:
                 resize_ratio = float(self.image_options["resize_ratio"])
-                resize_image = misc.imresize(image, resize_ratio, interp='nearest')
+                resize_image = cv2.resize(image, (0, 0), fx=resize_ratio, fy=resize_ratio)
             else:
                 resize_width = int(self.image_options["resize_size"])
                 # resize_height = int(self.image_options["resize_height"])
@@ -77,12 +79,16 @@ class BatchDatset:
         return np.array(resize_image)
 
     def _transform_annotation(self, filename):
-        mat = np.loadtxt(filename, dtype='uint8')
+        mat = pd.read_csv(filename, header=None, dtype='uint8', delim_whitespace=True).as_matrix()
         # replace all 255 values with 0s
         mat = self._normalize_zero(mat)
         if self.image_options.get("resize", False) and self.image_options["resize"]:
-            resize_width = int(self.image_options["resize_size"])
-            resize_mat = misc.imresize(mat, [resize_width, resize_width], interp='nearest')
+            if self.image_options.get("by_ratio", False) and self.image_options['by_ratio']:
+                resize_ratio = float(self.image_options["resize_ratio"])
+                resize_mat = cv2.resize(mat, (0, 0), fx=resize_ratio, fy=resize_ratio)
+            else:
+                resize_width = int(self.image_options["resize_size"])
+                resize_mat = misc.imresize(mat, [resize_width, resize_width], interp='nearest')
         else:
             resize_mat = mat
         return np.array(resize_mat)
